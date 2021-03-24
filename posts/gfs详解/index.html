@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en-us">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>GFS详解 | Youzhe Liu&#39;s site</title>
+    <link rel="stylesheet" href="/css/style.css" />
+    <link rel="stylesheet" href="/css/fonts.css" />
+    
+  </head>
+
+  <body>
+    <nav>
+    <ul class="menu">
+      
+      <li><a href="/">Home</a></li>
+      
+      <li><a href="/posts/">Posts</a></li>
+      
+      <li><a href="/categories/">Categories</a></li>
+      
+      <li><a href="/tags/">Tags</a></li>
+      
+      <li><a href="/about/">About</a></li>
+      
+      <li><a href="/CV/cv.pdf">CV</a></li>
+      
+      <li><a href="/papers/">papers_rep</a></li>
+      
+    </ul>
+    <hr/>
+    </nav>
+
+<div class="article-meta">
+<h1><span class="title">GFS详解</span></h1>
+
+<h2 class="date">2021/03/07</h2>
+</div>
+
+<main>
+<h1 id="gfshdfs-as-eg">GFS(HDFS as eg.)</h1>
+<h2 id="intro">Intro</h2>
+<p><em>Initial paper</em> is here: <a href="/papers/gfssosp2003.pdf">The google file system</a></p>
+<p>HDFS(Hadoop Distributed File System)是Hadoop的一个自带的组件，用于分布式的文件储存。基本的框架首先展示如下(图源Hadoop官方文档)：</p>
+<p><img src="https://alanliusite-1301924840.cos.ap-nanjing.myqcloud.com/img/20210308150312.png" alt="HDFS architecture" style="zoom:50%;" /></p>
+<p>HDFS的特点总结(部分参考：Hadoop权威指南)：</p>
+<ul>
+<li>流式数据访问：具体来说，数据储存、访问模式是一次写入多次读取。数据的工作哲学是：一次性将数据分到(复制)不同机器上，而后续的工作都是在这些机器上的数据上直接进行运行工作。</li>
+<li>使用商用硬件：Hadoop并不需要运行在昂贵的硬件上，普通的商用机器就能够支持。商用机的一个很大缺点就是容易出现错误，但是分布式的HDFS可以在一定程度上进行错误的避免，所以完全可以用商用机来搭建HDFS。</li>
+<li>大量小文件：文件的数目主要受内存大小的限制，因为NameNode是储存在内存当中的，每个文件的信息数据一般为150Bytes，所以可以储存的文件数目可以比较多。</li>
+</ul>
+
+</main>
+
+  <footer>
+  
+  
+  <hr/>
+  © <a href="https://baidu.com">Alan Liu</a> 2021 &ndash; 2021 | <a href="https://github.com/pickerxxr">Github</a> | <a href="pickerxxr@gmail.com">mail</a>
+  
+  </footer>
+  </body>
+</html>
+

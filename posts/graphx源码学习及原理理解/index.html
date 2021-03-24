@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="en-us">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>GraphX源码学习及原理理解 | Youzhe Liu&#39;s site</title>
+    <link rel="stylesheet" href="/css/style.css" />
+    <link rel="stylesheet" href="/css/fonts.css" />
+    
+  </head>
+
+  <body>
+    <nav>
+    <ul class="menu">
+      
+      <li><a href="/">Home</a></li>
+      
+      <li><a href="/posts/">Posts</a></li>
+      
+      <li><a href="/categories/">Categories</a></li>
+      
+      <li><a href="/tags/">Tags</a></li>
+      
+      <li><a href="/about/">About</a></li>
+      
+      <li><a href="/CV/cv.pdf">CV</a></li>
+      
+      <li><a href="/papers/">papers_rep</a></li>
+      
+    </ul>
+    <hr/>
+    </nav>
+
+<div class="article-meta">
+<h1><span class="title">GraphX源码学习及原理理解</span></h1>
+<h2 class="author">Youzhe Liu</h2>
+<h2 class="date">2021/01/30</h2>
+</div>
+
+<main>
+<h1 id="graphx-源码解析及原理理解">GraphX 源码解析及原理理解</h1>
+<h2 id="原理概述">原理概述</h2>
+<h3 id="分布式图的处理">分布式图的处理</h3>
+<ul>
+<li>
+<p>当图数据规模太大以至于无法在单一的机器上实现算法运行时就要考虑用分布式算法来实现。比如分布式下的PageRank计算既是一个很经典的例子。</p>
+</li>
+<li>
+<p>图算法的主要问题集中在图数据的分布式储存、图数据集分布式算法的设计以及图数据分布式算法的系统平台架构。</p>
+</li>
+<li>
+<p>本文主要介绍分布式下图数据的平台以及使用，这里以Spark为例。</p>
+</li>
+</ul>
+<h2 id="graphx">GraphX</h2>
+<h3 id="介绍">介绍</h3>
+<p>Spark的一个图数据处理的系统API。使用RDD(Resilient Distributed Property Graph)的数据机制：顶点和边都有属性的有向多重图。GraphX提供了Pregel的接口。对<code>Graph</code>视图的所有操作，最终都会转换成其关联的<code>Table</code>视图的<code>RDD</code>操作来完成。一个图的计算在逻辑上等价于一系列<code>RDD</code>的转换过程。因此，<code>Graph</code>最终具备了<code>RDD</code>的3个关键特性：不变性、分布性和容错性。其中最关键的是不变性。逻辑上，所有图的转换和操作都产生了一个新图；物理上，<code>GraphX</code>会有一定程度的不变顶点和边的复用优化，对用户透明。</p>
+<h3 id="储存模式">储存模式</h3>
+<ul>
+<li>点分割的储存模式:</li>
+</ul>
+<p><img src="https://alanliusite-1301924840.cos.ap-nanjing.myqcloud.com/img/20210131005922.png" style="zoom: 67%;" /></p>
+<p>很明显，点分割的储存方式要求某一机器上的点的邻居节点都要有备份，这样需要双倍的储存空间来储存节点，一定程度上增加了储存空间，却减少了不同机器之间的交流成本。</p>
+<p><code>GraphX</code>在进行图分割时，有几种不同的分区(<code>partition</code>)策略，它通过<code>PartitionStrategy</code>专门定义这些策略。在<code>PartitionStrategy</code>中，总共定义了<code>EdgePartition2D</code>、<code>EdgePartition1D</code>、<code>RandomVertexCut</code>以及 <code>CanonicalRandomVertexCut</code>这四种不同的分区策略。下面分别介绍这几种策略。</p>
+<ol>
+<li>
+<p>RandomVertexCut</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-scala" data-lang="scala"><span style="color:#66d9ef">case</span> <span style="color:#66d9ef">object</span> <span style="color:#a6e22e">RandomVertexCut</span> <span style="color:#66d9ef">extends</span> <span style="color:#a6e22e">PartitionStrategy</span> <span style="color:#f92672">{</span>
+    <span style="color:#66d9ef">override</span> <span style="color:#66d9ef">def</span> getPartition<span style="color:#f92672">(</span>src<span style="color:#66d9ef">:</span> <span style="color:#66d9ef">VertexId</span><span style="color:#f92672">,</span> dst<span style="color:#66d9ef">:</span> <span style="color:#66d9ef">VertexId</span><span style="color:#f92672">,</span> numParts<span style="color:#66d9ef">:</span> <span style="color:#66d9ef">PartitionID</span><span style="color:#f92672">)</span><span style="color:#66d9ef">:</span> <span style="color:#66d9ef">PartitionID</span> <span style="color:#f92672">=</span> <span style="color:#f92672">{</span>
+      math<span style="color:#f92672">.</span>abs<span style="color:#f92672">((</span>src<span style="color:#f92672">,</span> dst<span style="color:#f92672">).</span>hashCode<span style="color:#f92672">())</span> <span style="color:#f92672">%</span> numParts
+    <span style="color:#f92672">}</span>
+  <span style="color:#f92672">}</span>
+</code></pre></div><p>这个方法相对来说比较直接简单，也就是直接使用哈希化的随机策略来进行划分，复杂度很低但是容易在实际的图上为后续工作产生复杂。注意的是，这种划分下，两节点之间<strong>相同方向</strong>的边会分到同一分区。</p>
+</li>
+<li>
+<p>CanonicalRandomVertexCut</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-scala" data-lang="scala"><span style="color:#66d9ef">case</span> <span style="color:#66d9ef">object</span> <span style="color:#a6e22e">CanonicalRandomVertexCut</span> <span style="color:#66d9ef">extends</span> <span style="color:#a6e22e">PartitionStrategy</span> <span style="color:#f92672">{</span>
+    <span style="color:#66d9ef">override</span> <span style="color:#66d9ef">def</span> getPartition<span style="color:#f92672">(</span>src<span style="color:#66d9ef">:</span> <span style="color:#66d9ef">VertexId</span><span style="color:#f92672">,</span> dst<span style="color:#66d9ef">:</span> <span style="color:#66d9ef">VertexId</span><span style="color:#f92672">,</span> numParts<span style="color:#66d9ef">:</span> <span style="color:#66d9ef">PartitionID</span><span style="color:#f92672">)</span><span style="color:#66d9ef">:</span> <span style="color:#66d9ef">PartitionID</span> <span style="color:#f92672">=</span> <span style="color:#f92672">{</span>
+      <span style="color:#66d9ef">if</span> <span style="color:#f92672">(</span>src <span style="color:#f92672">&lt;</span> dst<span style="color:#f92672">)</span> <span style="color:#f92672">{</span>
+        math<span style="color:#f92672">.</span>abs<span style="color:#f92672">((</span>src<span style="color:#f92672">,</span> dst<span style="color:#f92672">).</span>hashCode<span style="color:#f92672">())</span> <span style="color:#f92672">%</span> numParts
+      <span style="color:#f92672">}</span> <span style="color:#66d9ef">else</span> <span style="color:#f92672">{</span>
+        math<span style="color:#f92672">.</span>abs<span style="color:#f92672">((</span>dst<span style="color:#f92672">,</span> src<span style="color:#f92672">).</span>hashCode<span style="color:#f92672">())</span> <span style="color:#f92672">%</span> numParts
+      <span style="color:#f92672">}</span>
+    <span style="color:#f92672">}</span>
+  <span style="color:#f92672">}</span>
+</code></pre></div><p>可以看出，这种方法和上面方法的区别就在于只取单一方向的边在同一区域。因为src节点和dst(destination)节点之间通过哈希值大小是有一个所谓的方向的，这样无论是什么方向都会分到同一区域中。</p>
+</li>
+<li>
+<p>EdgePartition1D</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-scala" data-lang="scala"><span style="color:#66d9ef">case</span> <span style="color:#66d9ef">object</span> <span style="color:#a6e22e">EdgePartition1D</span> <span style="color:#66d9ef">extends</span> <span style="color:#a6e22e">PartitionStrategy</span> <span style="color:#f92672">{</span>
+    <span style="color:#66d9ef">override</span> <span style="color:#66d9ef">def</span> getPartition<span style="color:#f92672">(</span>src<span style="color:#66d9ef">:</span> <span style="color:#66d9ef">VertexId</span><span style="color:#f92672">,</span> dst<span style="color:#66d9ef">:</span> <span style="color:#66d9ef">VertexId</span><span style="color:#f92672">,</span> numParts<span style="color:#66d9ef">:</span> <span style="color:#66d9ef">PartitionID</span><span style="color:#f92672">)</span><span style="color:#66d9ef">:</span> <span style="color:#66d9ef">PartitionID</span> <span style="color:#f92672">=</span> <span style="color:#f92672">{</span>
+      <span style="color:#66d9ef">val</span> mixingPrime<span style="color:#66d9ef">:</span> <span style="color:#66d9ef">VertexId</span> <span style="color:#f92672">=</span> <span style="color:#ae81ff">1125899906842597L</span>
+      <span style="color:#f92672">(</span>math<span style="color:#f92672">.</span>abs<span style="color:#f92672">(</span>src <span style="color:#f92672">*</span> mixingPrime<span style="color:#f92672">)</span> <span style="color:#f92672">%</span> numParts<span style="color:#f92672">).</span>toInt
+    <span style="color:#f92672">}</span>
+  <span style="color:#f92672">}</span>
+</code></pre></div><p>这种方法仅仅根据源顶点<code>id</code>来将边分配到不同的分区。有相同源顶点的边会分配到同一分区。</p>
+</li>
+<li>
+<p>EdgePartition2D</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-scala" data-lang="scala"><span style="color:#66d9ef">case</span> <span style="color:#66d9ef">object</span> <span style="color:#a6e22e">EdgePartition2D</span> <span style="color:#66d9ef">extends</span> <span style="color:#a6e22e">PartitionStrategy</span> <span style="color:#f92672">{</span>
+    <span style="color:#66d9ef">override</span> <span style="color:#66d9ef">def</span> getPartition<span style="color:#f92672">(</span>src<span style="color:#66d9ef">:</span> <span style="color:#66d9ef">VertexId</span><span style="color:#f92672">,</span> dst<span style="color:#66d9ef">:</span> <span style="color:#66d9ef">VertexId</span><span style="color:#f92672">,</span> numParts<span style="color:#66d9ef">:</span> <span style="color:#66d9ef">PartitionID</span><span style="color:#f92672">)</span><span style="color:#66d9ef">:</span> <span style="color:#66d9ef">PartitionID</span> <span style="color:#f92672">=</span> <span style="color:#f92672">{</span>
+      <span style="color:#66d9ef">val</span> ceilSqrtNumParts<span style="color:#66d9ef">:</span> <span style="color:#66d9ef">PartitionID</span> <span style="color:#f92672">=</span> math<span style="color:#f92672">.</span>ceil<span style="color:#f92672">(</span>math<span style="color:#f92672">.</span>sqrt<span style="color:#f92672">(</span>numParts<span style="color:#f92672">)).</span>toInt
+      <span style="color:#66d9ef">val</span> mixingPrime<span style="color:#66d9ef">:</span> <span style="color:#66d9ef">VertexId</span> <span style="color:#f92672">=</span> <span style="color:#ae81ff">1125899906842597L</span>
+      <span style="color:#66d9ef">if</span> <span style="color:#f92672">(</span>numParts <span style="color:#f92672">==</span> ceilSqrtNumParts <span style="color:#f92672">*</span> ceilSqrtNumParts<span style="color:#f92672">)</span> <span style="color:#f92672">{</span>
+        <span style="color:#75715e">// Use old method for perfect squared to ensure we get same results
+</span><span style="color:#75715e"></span>        <span style="color:#66d9ef">val</span> col<span style="color:#66d9ef">:</span> <span style="color:#66d9ef">PartitionID</span> <span style="color:#f92672">=</span> <span style="color:#f92672">(</span>math<span style="color:#f92672">.</span>abs<span style="color:#f92672">(</span>src <span style="color:#f92672">*</span> mixingPrime<span style="color:#f92672">)</span> <span style="color:#f92672">%</span> ceilSqrtNumParts<span style="color:#f92672">).</span>toInt
+        <span style="color:#66d9ef">val</span> row<span style="color:#66d9ef">:</span> <span style="color:#66d9ef">PartitionID</span> <span style="color:#f92672">=</span> <span style="color:#f92672">(</span>math<span style="color:#f92672">.</span>abs<span style="color:#f92672">(</span>dst <span style="color:#f92672">*</span> mixingPrime<span style="color:#f92672">)</span> <span style="color:#f92672">%</span> ceilSqrtNumParts<span style="color:#f92672">).</span>toInt
+        <span style="color:#f92672">(</span>col <span style="color:#f92672">*</span> ceilSqrtNumParts <span style="color:#f92672">+</span> row<span style="color:#f92672">)</span> <span style="color:#f92672">%</span> numParts
+      <span style="color:#f92672">}</span> <span style="color:#66d9ef">else</span> <span style="color:#f92672">{</span>
+        <span style="color:#75715e">// Otherwise use new method
+</span><span style="color:#75715e"></span>        <span style="color:#66d9ef">val</span> cols <span style="color:#66d9ef">=</span> ceilSqrtNumParts
+        <span style="color:#66d9ef">val</span> rows <span style="color:#66d9ef">=</span> <span style="color:#f92672">(</span>numParts <span style="color:#f92672">+</span> cols <span style="color:#f92672">-</span> <span style="color:#ae81ff">1</span><span style="color:#f92672">)</span> <span style="color:#f92672">/</span> cols
+        <span style="color:#66d9ef">val</span> lastColRows <span style="color:#66d9ef">=</span> numParts <span style="color:#f92672">-</span> rows <span style="color:#f92672">*</span> <span style="color:#f92672">(</span>cols <span style="color:#f92672">-</span> <span style="color:#ae81ff">1</span><span style="color:#f92672">)</span>
+        <span style="color:#66d9ef">val</span> col <span style="color:#66d9ef">=</span> <span style="color:#f92672">(</span>math<span style="color:#f92672">.</span>abs<span style="color:#f92672">(</span>src <span style="color:#f92672">*</span> mixingPrime<span style="color:#f92672">)</span> <span style="color:#f92672">%</span> numParts <span style="color:#f92672">/</span> rows<span style="color:#f92672">).</span>toInt
+        <span style="color:#66d9ef">val</span> row <span style="color:#66d9ef">=</span> <span style="color:#f92672">(</span>math<span style="color:#f92672">.</span>abs<span style="color:#f92672">(</span>dst <span style="color:#f92672">*</span> mixingPrime<span style="color:#f92672">)</span> <span style="color:#f92672">%</span> <span style="color:#f92672">(</span><span style="color:#66d9ef">if</span> <span style="color:#f92672">(</span>col <span style="color:#f92672">&lt;</span> cols <span style="color:#f92672">-</span> <span style="color:#ae81ff">1</span><span style="color:#f92672">)</span> rows <span style="color:#66d9ef">else</span> lastColRows<span style="color:#f92672">)).</span>toInt
+        col <span style="color:#f92672">*</span> rows <span style="color:#f92672">+</span> row
+      <span style="color:#f92672">}</span>
+    <span style="color:#f92672">}</span>
+  <span style="color:#f92672">}</span>
+</code></pre></div><p>这种方法相对来说是较为复杂的一个。</p>
+<p>​		这种分割方法同时使用到了源顶点<code>id</code>和目的顶点<code>id</code>。它使用稀疏边连接矩阵的2维区分来将边分配到不同的分区，从而保证顶点的备份数不大于<code>2 * sqrt(numParts)</code>的限制。这里<code>numParts</code>表示分区数。 这个方法的实现分两种情况，即分区数能完全开方和不能完全开方两种情况。当分区数能完全开方时，采用下面的方法：</p>
+</li>
+</ol>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-scala" data-lang="scala"> <span style="color:#66d9ef">val</span> col<span style="color:#66d9ef">:</span> <span style="color:#66d9ef">PartitionID</span> <span style="color:#f92672">=</span> <span style="color:#f92672">(</span>math<span style="color:#f92672">.</span>abs<span style="color:#f92672">(</span>src <span style="color:#f92672">*</span> mixingPrime<span style="color:#f92672">)</span> <span style="color:#f92672">%</span> ceilSqrtNumParts<span style="color:#f92672">).</span>toInt
+ <span style="color:#66d9ef">val</span> row<span style="color:#66d9ef">:</span> <span style="color:#66d9ef">PartitionID</span> <span style="color:#f92672">=</span> <span style="color:#f92672">(</span>math<span style="color:#f92672">.</span>abs<span style="color:#f92672">(</span>dst <span style="color:#f92672">*</span> mixingPrime<span style="color:#f92672">)</span> <span style="color:#f92672">%</span> ceilSqrtNumParts<span style="color:#f92672">).</span>toInt
+ <span style="color:#f92672">(</span>col <span style="color:#f92672">*</span> ceilSqrtNumParts <span style="color:#f92672">+</span> row<span style="color:#f92672">)</span> <span style="color:#f92672">%</span> numParts
+</code></pre></div><p>  当分区数不能完全开方时，采用下面的方法。这个方法的最后一列允许拥有不同的行数。</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-scala" data-lang="scala"><span style="color:#66d9ef">val</span> cols <span style="color:#66d9ef">=</span> ceilSqrtNumParts
+<span style="color:#66d9ef">val</span> rows <span style="color:#66d9ef">=</span> <span style="color:#f92672">(</span>numParts <span style="color:#f92672">+</span> cols <span style="color:#f92672">-</span> <span style="color:#ae81ff">1</span><span style="color:#f92672">)</span> <span style="color:#f92672">/</span> cols
+<span style="color:#75715e">// 最后一列允许不同的行数
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">val</span> lastColRows <span style="color:#66d9ef">=</span> numParts <span style="color:#f92672">-</span> rows <span style="color:#f92672">*</span> <span style="color:#f92672">(</span>cols <span style="color:#f92672">-</span> <span style="color:#ae81ff">1</span><span style="color:#f92672">)</span>
+<span style="color:#66d9ef">val</span> col <span style="color:#66d9ef">=</span> <span style="color:#f92672">(</span>math<span style="color:#f92672">.</span>abs<span style="color:#f92672">(</span>src <span style="color:#f92672">*</span> mixingPrime<span style="color:#f92672">)</span> <span style="color:#f92672">%</span> numParts <span style="color:#f92672">/</span> rows<span style="color:#f92672">).</span>toInt
+<span style="color:#66d9ef">val</span> row <span style="color:#66d9ef">=</span> <span style="color:#f92672">(</span>math<span style="color:#f92672">.</span>abs<span style="color:#f92672">(</span>dst <span style="color:#f92672">*</span> mixingPrime<span style="color:#f92672">)</span> <span style="color:#f92672">%</span> <span style="color:#f92672">(</span><span style="color:#66d9ef">if</span> <span style="color:#f92672">(</span>col <span style="color:#f92672">&lt;</span> cols <span style="color:#f92672">-</span> <span style="color:#ae81ff">1</span><span style="color:#f92672">)</span> rows <span style="color:#66d9ef">else</span> lastColRows<span style="color:#f92672">)).</span>toInt
+col <span style="color:#f92672">*</span> rows <span style="color:#f92672">+</span> row
+</code></pre></div><p>  下面举个例子来说明该方法。假设我们有一个拥有12个顶点的图，要把它切分到9台机器。我们可以用下面的稀疏矩阵来表示:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-scala" data-lang="scala">          <span style="color:#a6e22e">__________________________________</span>
+     v0   <span style="color:#f92672">|</span> P0 <span style="color:#f92672">*</span>     <span style="color:#f92672">|</span> P1       <span style="color:#f92672">|</span> P2    <span style="color:#f92672">*</span>  <span style="color:#f92672">|</span>
+     v1   <span style="color:#f92672">|</span>  <span style="color:#f92672">****</span>    <span style="color:#f92672">|</span>  <span style="color:#f92672">*</span>       <span style="color:#f92672">|</span>          <span style="color:#f92672">|</span>
+     v2   <span style="color:#f92672">|</span>  <span style="color:#f92672">*******</span> <span style="color:#f92672">|</span>      <span style="color:#f92672">**</span>  <span style="color:#f92672">|</span>  <span style="color:#f92672">****</span>    <span style="color:#f92672">|</span>
+     v3   <span style="color:#f92672">|</span>  <span style="color:#f92672">*****</span>   <span style="color:#f92672">|</span>  <span style="color:#f92672">*</span>  <span style="color:#f92672">*</span>    <span style="color:#f92672">|</span>       <span style="color:#f92672">*</span>  <span style="color:#f92672">|</span>
+          <span style="color:#f92672">----------------------------------</span>
+     v4   <span style="color:#f92672">|</span> P3 <span style="color:#f92672">*</span>     <span style="color:#f92672">|</span> P4 <span style="color:#f92672">***</span>   <span style="color:#f92672">|</span> P5 <span style="color:#f92672">**</span>  <span style="color:#f92672">*</span> <span style="color:#f92672">|</span>
+     v5   <span style="color:#f92672">|</span>  <span style="color:#f92672">*</span>  <span style="color:#f92672">*</span>    <span style="color:#f92672">|</span>  <span style="color:#f92672">*</span>       <span style="color:#f92672">|</span>          <span style="color:#f92672">|</span>
+     v6   <span style="color:#f92672">|</span>       <span style="color:#f92672">*</span>  <span style="color:#f92672">|</span>      <span style="color:#f92672">**</span>  <span style="color:#f92672">|</span>  <span style="color:#f92672">****</span>    <span style="color:#f92672">|</span>
+     v7   <span style="color:#f92672">|</span>  <span style="color:#f92672">*</span> <span style="color:#f92672">*</span> <span style="color:#f92672">*</span>   <span style="color:#f92672">|</span>  <span style="color:#f92672">*</span>  <span style="color:#f92672">*</span>    <span style="color:#f92672">|</span>       <span style="color:#f92672">*</span>  <span style="color:#f92672">|</span>
+          <span style="color:#f92672">----------------------------------</span>
+     v8   <span style="color:#f92672">|</span> P6   <span style="color:#f92672">*</span>   <span style="color:#f92672">|</span> P7    <span style="color:#f92672">*</span>  <span style="color:#f92672">|</span> P8  <span style="color:#f92672">*</span>   <span style="color:#f92672">*|</span>
+     v9   <span style="color:#f92672">|</span>     <span style="color:#f92672">*</span>    <span style="color:#f92672">|</span>  <span style="color:#f92672">*</span>    <span style="color:#f92672">*</span>  <span style="color:#f92672">|</span>          <span style="color:#f92672">|</span>
+     v10  <span style="color:#f92672">|</span>       <span style="color:#f92672">*</span>  <span style="color:#f92672">|</span>      <span style="color:#f92672">**</span>  <span style="color:#f92672">|</span>  <span style="color:#f92672">*</span>  <span style="color:#f92672">*</span>    <span style="color:#f92672">|</span>
+     v11  <span style="color:#f92672">|</span> <span style="color:#f92672">*</span> <span style="color:#66d9ef">&lt;-</span>E    <span style="color:#f92672">|</span>  <span style="color:#f92672">***</span>     <span style="color:#f92672">|</span>       <span style="color:#f92672">**</span> <span style="color:#f92672">|</span>
+          <span style="color:#f92672">----------------------------------</span>
+</code></pre></div><p>  上面的例子中<code>*</code>表示分配到处理器上的边。<code>E</code>表示连接顶点<code>v11</code>和<code>v1</code>的边，它被分配到了处理器<code>P6</code>上。为了获得边所在的处理器，我们将矩阵切分为<code>sqrt(numParts) * sqrt(numParts)</code>块。 注意，上图中与顶点<code>v11</code>相连接的边只出现在第一列的块<code>(P0,P3,P6)</code>或者最后一行的块<code>(P6,P7,P8)</code>中，这保证了<code>V11</code>的副本数不会超过<code>2 *sqrt(numParts)</code>份，在上例中即副本不能超过6份。</p>
+<p>  在上面的例子中，<code>P0</code>里面存在很多边，这会造成工作的不均衡。为了提高均衡，我们首先用顶点<code>id</code>乘以一个大的素数，然后再<code>shuffle</code>顶点的位置。乘以一个大的素数本质上不能解决不平衡的问题，只是减少了不平衡的情况发生。</p>
+<h3 id="graphx中的-几个概念">GraphX中的 几个概念</h3>
+<h4 id="vertices">Vertices</h4>
+<p>在<code>GraphX</code>中，<code>vertices</code>对应了名为<code>VertexRDD</code>的<code>RDD</code>。这个<code>RDD</code>有顶点<code>id</code>和顶点属性两个成员变量。它的源码如下所示：</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-scala" data-lang="scala"><span style="color:#66d9ef">abstract</span> <span style="color:#66d9ef">class</span> <span style="color:#a6e22e">VertexRDD</span><span style="color:#f92672">[</span><span style="color:#66d9ef">VD</span><span style="color:#f92672">](</span>
+    sc<span style="color:#66d9ef">:</span> <span style="color:#66d9ef">SparkContext</span><span style="color:#f92672">,</span>
+    deps<span style="color:#66d9ef">:</span> <span style="color:#66d9ef">Seq</span><span style="color:#f92672">[</span><span style="color:#66d9ef">Dependency</span><span style="color:#f92672">[</span><span style="color:#66d9ef">_</span><span style="color:#f92672">]])</span> <span style="color:#66d9ef">extends</span> <span style="color:#a6e22e">RDD</span><span style="color:#f92672">[(</span><span style="color:#66d9ef">VertexId</span>, <span style="color:#66d9ef">VD</span><span style="color:#f92672">)](</span>sc<span style="color:#f92672">,</span> deps<span style="color:#f92672">)</span> 
+</code></pre></div><p><code>VertexRDD</code>是<code>RDD[(VertexID, VD)]</code>的一个继承，<code>vertexID</code>就是顶点ID，VD表示顶点所带的属性类别。这表明了VertexRDD具有顶点id和顶点属性。</p>
+<h4 id="edges">Edges</h4>
+<p>  在<code>GraphX</code>中，<code>edges</code>对应着<code>EdgeRDD</code>。这个<code>RDD</code>拥有三个成员变量，分别是源顶点<code>id</code>、目标顶点<code>id</code>以及边属性。它的源码如下所示：</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-scala" data-lang="scala"><span style="color:#66d9ef">abstract</span> <span style="color:#66d9ef">class</span> <span style="color:#a6e22e">EdgeRDD</span><span style="color:#f92672">[</span><span style="color:#66d9ef">ED</span><span style="color:#f92672">](</span>
+    sc<span style="color:#66d9ef">:</span> <span style="color:#66d9ef">SparkContext</span><span style="color:#f92672">,</span>
+    deps<span style="color:#66d9ef">:</span> <span style="color:#66d9ef">Seq</span><span style="color:#f92672">[</span><span style="color:#66d9ef">Dependency</span><span style="color:#f92672">[</span><span style="color:#66d9ef">_</span><span style="color:#f92672">]])</span> <span style="color:#66d9ef">extends</span> <span style="color:#a6e22e">RDD</span><span style="color:#f92672">[</span><span style="color:#66d9ef">Edge</span><span style="color:#f92672">[</span><span style="color:#66d9ef">ED</span><span style="color:#f92672">]](</span>sc<span style="color:#f92672">,</span> deps<span style="color:#f92672">)</span> 
+</code></pre></div><p>  从源码中我们可以看到，<code>EdgeRDD</code>继承自<code>RDD[Edge[ED]]</code>，即类型为<code>Edge[ED]</code>的<code>RDD</code>。<code>Edge[ED]</code>在后文会讲到。</p>
+<h4 id="triplets">Triplets</h4>
+<p> 在<code>GraphX</code>中，<code>triplets</code>对应着<code>EdgeTriplet</code>。它是一个三元组视图，这个视图逻辑上将顶点和边的属性保存为一个<code>RDD[EdgeTriplet[VD, ED]]</code>。可以通过下面的<code>Sql</code>表达式表示这个三元视图的含义:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-scala" data-lang="scala"><span style="color:#a6e22e">SELECT</span> src<span style="color:#f92672">.</span>id<span style="color:#f92672">,</span> dst<span style="color:#f92672">.</span>id<span style="color:#f92672">,</span> src<span style="color:#f92672">.</span>attr<span style="color:#f92672">,</span> e<span style="color:#f92672">.</span>attr<span style="color:#f92672">,</span> dst<span style="color:#f92672">.</span>attr
+<span style="color:#a6e22e">FROM</span> edges <span style="color:#a6e22e">AS</span> e <span style="color:#a6e22e">LEFT</span> <span style="color:#a6e22e">JOIN</span> vertices <span style="color:#a6e22e">AS</span> src<span style="color:#f92672">,</span> vertices <span style="color:#a6e22e">AS</span> dst
+<span style="color:#a6e22e">ON</span> e<span style="color:#f92672">.</span>srcId <span style="color:#66d9ef">=</span> src<span style="color:#f92672">.</span><span style="color:#a6e22e">Id</span> <span style="color:#a6e22e">AND</span> e<span style="color:#f92672">.</span>dstId <span style="color:#66d9ef">=</span> dst<span style="color:#f92672">.</span><span style="color:#a6e22e">Id</span>
+</code></pre></div><p>  同样，也可以通过下面图解的形式来表示它的含义：</p>
+<p><img src="https://alanliusite-1301924840.cos.ap-nanjing.myqcloud.com/img/20210131142708.png" alt="3.1"></p>
+<p>  <code>EdgeTriplet</code>的源代码如下所示：</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-scala" data-lang="scala"><span style="color:#66d9ef">class</span> <span style="color:#a6e22e">EdgeTriplet</span><span style="color:#f92672">[</span><span style="color:#66d9ef">VD</span>, <span style="color:#66d9ef">ED</span><span style="color:#f92672">]</span> <span style="color:#a6e22e">extends</span> <span style="color:#a6e22e">Edge</span><span style="color:#f92672">[</span><span style="color:#66d9ef">ED</span><span style="color:#f92672">]</span> <span style="color:#f92672">{</span>
+  <span style="color:#75715e">//源顶点属性
+</span><span style="color:#75715e"></span>  <span style="color:#66d9ef">var</span> srcAttr<span style="color:#66d9ef">:</span> <span style="color:#66d9ef">VD</span> <span style="color:#f92672">=</span> <span style="color:#66d9ef">_</span> <span style="color:#75715e">// nullValue[VD]
+</span><span style="color:#75715e"></span>  <span style="color:#75715e">//目标顶点属性
+</span><span style="color:#75715e"></span>  <span style="color:#66d9ef">var</span> dstAttr<span style="color:#66d9ef">:</span> <span style="color:#66d9ef">VD</span> <span style="color:#f92672">=</span> <span style="color:#66d9ef">_</span> <span style="color:#75715e">// nullValue[VD]
+</span><span style="color:#75715e"></span>  <span style="color:#66d9ef">protected</span><span style="color:#f92672">[</span><span style="color:#66d9ef">spark</span><span style="color:#f92672">]</span> <span style="color:#66d9ef">def</span> set<span style="color:#f92672">(</span>other<span style="color:#66d9ef">:</span> <span style="color:#66d9ef">Edge</span><span style="color:#f92672">[</span><span style="color:#66d9ef">ED</span><span style="color:#f92672">])</span><span style="color:#66d9ef">:</span> <span style="color:#66d9ef">EdgeTriplet</span><span style="color:#f92672">[</span><span style="color:#66d9ef">VD</span>, <span style="color:#66d9ef">ED</span><span style="color:#f92672">]</span> <span style="color:#66d9ef">=</span> <span style="color:#f92672">{</span>
+    srcId <span style="color:#66d9ef">=</span> other<span style="color:#f92672">.</span>srcId
+    dstId <span style="color:#66d9ef">=</span> other<span style="color:#f92672">.</span>dstId
+    attr <span style="color:#66d9ef">=</span> other<span style="color:#f92672">.</span>attr
+    <span style="color:#66d9ef">this</span>
+  <span style="color:#f92672">}</span>
+</code></pre></div><p>  <code>EdgeTriplet</code>类继承自<code>Edge</code>类，我们来看看这个父类：</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-scala" data-lang="scala"><span style="color:#66d9ef">case</span> <span style="color:#66d9ef">class</span> <span style="color:#a6e22e">Edge</span><span style="color:#f92672">[</span><span style="color:#66d9ef">@specialized</span><span style="color:#f92672">(</span><span style="color:#66d9ef">Char</span>, <span style="color:#66d9ef">Int</span>, <span style="color:#66d9ef">Boolean</span>, <span style="color:#66d9ef">Byte</span>, <span style="color:#66d9ef">Long</span>, <span style="color:#66d9ef">Float</span>, <span style="color:#66d9ef">Double</span><span style="color:#f92672">)</span> <span style="color:#66d9ef">ED</span><span style="color:#f92672">]</span> <span style="color:#f92672">(</span>
+    <span style="color:#66d9ef">var</span> srcId<span style="color:#66d9ef">:</span> <span style="color:#66d9ef">VertexId</span> <span style="color:#f92672">=</span> <span style="color:#ae81ff">0</span><span style="color:#f92672">,</span>
+    <span style="color:#66d9ef">var</span> dstId<span style="color:#66d9ef">:</span> <span style="color:#66d9ef">VertexId</span> <span style="color:#f92672">=</span> <span style="color:#ae81ff">0</span><span style="color:#f92672">,</span>
+    <span style="color:#66d9ef">var</span> attr<span style="color:#66d9ef">:</span> <span style="color:#66d9ef">ED</span> <span style="color:#f92672">=</span> <span style="color:#66d9ef">null</span><span style="color:#f92672">.</span>asInstanceOf<span style="color:#f92672">[</span><span style="color:#66d9ef">ED</span><span style="color:#f92672">])</span>
+  <span style="color:#66d9ef">extends</span> <span style="color:#a6e22e">Serializable</span>
+</code></pre></div><p>  <code>Edge</code>类中包含源顶点<code>id</code>，目标顶点<code>id</code>以及边的属性。所以从源代码中我们可以知道，<code>triplets</code>既包含了边属性也包含了源顶点的<code>id</code>和属性、目标顶点的<code>id</code>和属性。</p>
+<p><em>To be continued</em></p>
+
+</main>
+
+  <footer>
+  
+  
+  <hr/>
+  © <a href="https://baidu.com">Alan Liu</a> 2021 &ndash; 2021 | <a href="https://github.com/pickerxxr">Github</a> | <a href="pickerxxr@gmail.com">mail</a>
+  
+  </footer>
+  </body>
+</html>
+

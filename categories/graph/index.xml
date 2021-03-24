@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>graph on Youzhe Liu&#39;s site</title>
+    <link>https://pickerxxr.github.io/categories/graph/</link>
+    <description>Recent content in graph on Youzhe Liu&#39;s site</description>
+    <generator>Hugo -- gohugo.io</generator>
+    <language>en-us</language>
+    <lastBuildDate>Sat, 30 Jan 2021 21:32:21 +0800</lastBuildDate><atom:link href="https://pickerxxr.github.io/categories/graph/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>GraphX源码学习及原理理解</title>
+      <link>https://pickerxxr.github.io/posts/graphx%E6%BA%90%E7%A0%81%E5%AD%A6%E4%B9%A0%E5%8F%8A%E5%8E%9F%E7%90%86%E7%90%86%E8%A7%A3/</link>
+      <pubDate>Sat, 30 Jan 2021 21:32:21 +0800</pubDate>
+      
+      <guid>https://pickerxxr.github.io/posts/graphx%E6%BA%90%E7%A0%81%E5%AD%A6%E4%B9%A0%E5%8F%8A%E5%8E%9F%E7%90%86%E7%90%86%E8%A7%A3/</guid>
+      <description>GraphX 源码解析及原理理解 原理概述 分布式图的处理   当图数据规模太大以至于无法在单一的机器上实现算法运行时就要考虑用分布式算法来实现。比如分布式下的PageRank计算既是一个很经典的例子。
+  图算法的主要问题集中在图数据的分布式储存、图数据集分布式算法的设计以及图数据分布式算法的系统平台架构。
+  本文主要介绍分布式下图数据的平台以及使用，这里以Spark为例。
+  GraphX 介绍 Spark的一个图数据处理的系统API。使用RDD(Resilient Distributed Property Graph)的数据机制：顶点和边都有属性的有向多重图。GraphX提供了Pregel的接口。对Graph视图的所有操作，最终都会转换成其关联的Table视图的RDD操作来完成。一个图的计算在逻辑上等价于一系列RDD的转换过程。因此，Graph最终具备了RDD的3个关键特性：不变性、分布性和容错性。其中最关键的是不变性。逻辑上，所有图的转换和操作都产生了一个新图；物理上，GraphX会有一定程度的不变顶点和边的复用优化，对用户透明。
+储存模式  点分割的储存模式:  很明显，点分割的储存方式要求某一机器上的点的邻居节点都要有备份，这样需要双倍的储存空间来储存节点，一定程度上增加了储存空间，却减少了不同机器之间的交流成本。
+GraphX在进行图分割时，有几种不同的分区(partition)策略，它通过PartitionStrategy专门定义这些策略。在PartitionStrategy中，总共定义了EdgePartition2D、EdgePartition1D、RandomVertexCut以及 CanonicalRandomVertexCut这四种不同的分区策略。下面分别介绍这几种策略。
+  RandomVertexCut
+case object RandomVertexCut extends PartitionStrategy { override def getPartition(src: VertexId, dst: VertexId, numParts: PartitionID): PartitionID = { math.abs((src, dst).hashCode()) % numParts } } 这个方法相对来说比较直接简单，也就是直接使用哈希化的随机策略来进行划分，复杂度很低但是容易在实际的图上为后续工作产生复杂。注意的是，这种划分下，两节点之间相同方向的边会分到同一分区。
+  CanonicalRandomVertexCut
+case object CanonicalRandomVertexCut extends PartitionStrategy { override def getPartition(src: VertexId, dst: VertexId, numParts: PartitionID): PartitionID = { if (src &amp;lt; dst) { math.</description>
+    </item>
+    
+  </channel>
+</rss>
