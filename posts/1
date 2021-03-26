@@ -1,0 +1,99 @@
+---
+title: "关于MapReduce中的倒排索引"
+date: 2021-03-26T00:01:23+08:00
+---
+
+
+# MapReduce中的倒排索引(Inversed Index)
+最近在学习hadoop相关知识，到MapReduce这一部分发现比较繁杂，倒排索引的概念总是含糊不清，特此整理之。
+## Brief View：
+简单来说，倒排索引就是搜索引擎通过关键字来进行网页或者文档的定位，从而达到在搜索引擎中搜索能够返回希望的到的页面或者文档（包含这样的关键字）
+Google就是利用这样的搜索方式进行网页检索的，而各大平台所运用的搜索引擎也大都利用这种思想。
+
+## MapReduce与倒排索引
+- 首先是一个简单的例子：
+```
+T0 = "it is what it is"
+T1 = "what is it"
+T2 = "it is a banana"
+```
+如果我们根据这个来建立倒排索引，会得到的就是例如
+```
+"a": {2}
+"is":{0, 1, 2}
+...
+```
+
+- 设计思想：
+    - 我们想要达到的目标就是输入某几个单词能尽可能返回有这几个单词的页面
+    - 基本思路就是进行词语对应倒排的Union
+
+- 代码实现：
+```{java}
+// mapper 
+public static class InvertedIndexMapper extends Mapper<Object, Text, Text, Text> {
+    private Text keyInfo = new Text();  //存储单词和URI的组合
+    private Text valueInfo = new Text();//存储词频
+    private FileSplit split;            //存储Split对象
+
+    public void map(Object key, Text value, Context context) throws IOException, InterruptedException {
+        //获得<key,value>对所属的FileSplit对象
+        split = (FileSplit)context.getInputSplit();
+        StringTokenizer itr = new StringTokenizer(value.toString());
+
+        while(itr.hasMoreTokens()) {
+            //key值由单词和URI组成，如"MapReduce:1.txt"
+            keyInfo.set(itr.nextToken() + ":" + split.getPath().toString());
+            // 词频初始为1
+            valueInfo.set("1");
+            context.write(keyInfo, valueInfo);
+        }
+    }
+}
+```
+
+```{java}
+// Combiner
+
+public static class InvertedIndexCombiner extends Reducer<Text, Text, Text, Text> {
+    private Text info = new Text();
+    public void reduce(Text key, Iterable<Text>values, Context context) throws IOException, InterruptedException {
+        //统计词频
+        int sum = 0;
+        for(Text value : values) {
+            sum += Integer.parseInt(value.toString());
+        }
+        int splitIndex= key.toString().indexOf(":");
+
+        //重新设置value值由URI和词频组成
+        info.set(key.toString().substring(splitIndex + 1) + ":" + sum);
+        //重新设置key值为单词
+        key.set(key.toString().substring(0, splitIndex));
+        context.write(key, info);
+    }
+}
+```
+
+
+```
+// reducer:
+public static class InvertedIndexReducer extends Reducer<Text, Text, Text, Text> {
+    private Text result = new Text();
+    public void reducer(Text key, Iterable<Text>values, Context context) throws IOException, InterruptedException {
+        //生成文档列表
+        String fileList = new String();
+        for(Text value : values) {
+            fileList += value.toString() + ";";
+        }
+        result.set(fileList);
+        context.write(key, result);
+    }
+}
+```
+
+## 解读：
+- Mappper过程实际上就是进行了一个词频统计，这里需要注意的是 mapreduce框架只能产生两个值：key 和value，所以输出的时候我们需要将这个地方的某两个信息合并成一个进行输出：后需要对value进行加和，所以key包含两个信息：单词和文件位置
+- Combiner就是将词频加起来，没什么好说的
+- Reducer就是最终针对每一个单词都进行位置上的定位，针对每一个数据生成一个键值对从而输出所有信息。
+
+END
