@@ -54,7 +54,77 @@ T2 = &quot;it is a banana&quot;
 <pre><code>&quot;a&quot;: {2}
 &quot;is&quot;:{0, 1, 2}
 ...
-</code></pre>
+</code></pre><ul>
+<li>
+<p>设计思想：</p>
+<ul>
+<li>我们想要达到的目标就是输入某几个单词能尽可能返回有这几个单词的页面</li>
+<li>基本思路就是进行词语对应倒排的Union</li>
+</ul>
+</li>
+<li>
+<p>代码实现：</p>
+</li>
+</ul>
+<pre><code class="language-{java}" data-lang="{java}">// mapper 
+public static class InvertedIndexMapper extends Mapper&lt;Object, Text, Text, Text&gt; {
+    private Text keyInfo = new Text();  //存储单词和URI的组合
+    private Text valueInfo = new Text();//存储词频
+    private FileSplit split;            //存储Split对象
+
+    public void map(Object key, Text value, Context context) throws IOException, InterruptedException {
+        //获得&lt;key,value&gt;对所属的FileSplit对象
+        split = (FileSplit)context.getInputSplit();
+        StringTokenizer itr = new StringTokenizer(value.toString());
+
+        while(itr.hasMoreTokens()) {
+            //key值由单词和URI组成，如&quot;MapReduce:1.txt&quot;
+            keyInfo.set(itr.nextToken() + &quot;:&quot; + split.getPath().toString());
+            // 词频初始为1
+            valueInfo.set(&quot;1&quot;);
+            context.write(keyInfo, valueInfo);
+        }
+    }
+}
+</code></pre><pre><code class="language-{java}" data-lang="{java}">// Combiner
+
+public static class InvertedIndexCombiner extends Reducer&lt;Text, Text, Text, Text&gt; {
+    private Text info = new Text();
+    public void reduce(Text key, Iterable&lt;Text&gt;values, Context context) throws IOException, InterruptedException {
+        //统计词频
+        int sum = 0;
+        for(Text value : values) {
+            sum += Integer.parseInt(value.toString());
+        }
+        int splitIndex= key.toString().indexOf(&quot;:&quot;);
+
+        //重新设置value值由URI和词频组成
+        info.set(key.toString().substring(splitIndex + 1) + &quot;:&quot; + sum);
+        //重新设置key值为单词
+        key.set(key.toString().substring(0, splitIndex));
+        context.write(key, info);
+    }
+}
+</code></pre><pre><code>// reducer:
+public static class InvertedIndexReducer extends Reducer&lt;Text, Text, Text, Text&gt; {
+    private Text result = new Text();
+    public void reducer(Text key, Iterable&lt;Text&gt;values, Context context) throws IOException, InterruptedException {
+        //生成文档列表
+        String fileList = new String();
+        for(Text value : values) {
+            fileList += value.toString() + &quot;;&quot;;
+        }
+        result.set(fileList);
+        context.write(key, result);
+    }
+}
+</code></pre><h2 id="解读">解读：</h2>
+<ul>
+<li>Mappper过程实际上就是进行了一个词频统计，这里需要注意的是 mapreduce框架只能产生两个值：key 和value，所以输出的时候我们需要将这个地方的某两个信息合并成一个进行输出：后需要对value进行加和，所以key包含两个信息：单词和文件位置</li>
+<li>Combiner就是将词频加起来，没什么好说的</li>
+<li>Reducer就是最终针对每一个单词都进行位置上的定位，针对每一个数据生成一个键值对从而输出所有信息。</li>
+</ul>
+
 </main>
 
   <footer>
