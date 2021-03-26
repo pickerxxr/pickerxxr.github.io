@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en-us">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>关于MapReduce中的倒排索引 | Youzhe Liu&#39;s site</title>
+    <link rel="stylesheet" href="/css/style.css" />
+    <link rel="stylesheet" href="/css/fonts.css" />
+    
+  </head>
+
+  <body>
+    <nav>
+    <ul class="menu">
+      
+      <li><a href="/">Home</a></li>
+      
+      <li><a href="/posts/">Posts</a></li>
+      
+      <li><a href="/categories/">Categories</a></li>
+      
+      <li><a href="/tags/">Tags</a></li>
+      
+      <li><a href="/about/">About</a></li>
+      
+      <li><a href="/CV/CV.pdf">CV</a></li>
+      
+      <li><a href="/papers/">papers_rep</a></li>
+      
+    </ul>
+    <hr/>
+    </nav>
+
+<div class="article-meta">
+<h1><span class="title">关于MapReduce中的倒排索引</span></h1>
+
+<h2 class="date">2021/03/26</h2>
+</div>
+
+<main>
+<h1 id="mapreduce中的倒排索引inversed-index">MapReduce中的倒排索引(Inversed Index)</h1>
+<p>最近在学习hadoop相关知识，到MapReduce这一部分发现比较繁杂，倒排索引的概念总是含糊不清，特此整理之。</p>
+<h2 id="brief-view">Brief View：</h2>
+<p>简单来说，倒排索引就是搜索引擎通过关键字来进行网页或者文档的定位，从而达到在搜索引擎中搜索能够返回希望的到的页面或者文档（包含这样的关键字）
+Google就是利用这样的搜索方式进行网页检索的，而各大平台所运用的搜索引擎也大都利用这种思想。</p>
+<h2 id="mapreduce与倒排索引">MapReduce与倒排索引</h2>
+<ul>
+<li>首先是一个简单的例子：</li>
+</ul>
+<pre><code>T0 = &quot;it is what it is&quot;
+T1 = &quot;what is it&quot;
+T2 = &quot;it is a banana&quot;
+</code></pre><p>如果我们根据这个来建立倒排索引，会得到的就是例如</p>
+<pre><code>&quot;a&quot;: {2}
+&quot;is&quot;:{0, 1, 2}
+...
+</code></pre>
+</main>
+
+  <footer>
+  
+  
+  <hr/>
+  © <a href="https://baidu.com">Alan Liu</a> 2021 &ndash; 2021 | <a href="https://github.com/pickerxxr">Github</a> | <a href="pickerxxr@gmail.com">mail</a>
+  
+  </footer>
+  </body>
+</html>
+

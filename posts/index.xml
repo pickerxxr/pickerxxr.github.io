@@ -6,7 +6,19 @@
     <description>Recent content in Posts on Youzhe Liu&#39;s site</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>en-us</language>
-    <lastBuildDate>Sun, 07 Mar 2021 13:02:55 +0800</lastBuildDate><atom:link href="https://pickerxxr.github.io/posts/index.xml" rel="self" type="application/rss+xml" />
+    <lastBuildDate>Fri, 26 Mar 2021 00:01:23 +0800</lastBuildDate><atom:link href="https://pickerxxr.github.io/posts/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>关于MapReduce中的倒排索引</title>
+      <link>https://pickerxxr.github.io/posts/%E5%85%B3%E4%BA%8Emapreduce%E4%B8%AD%E7%9A%84%E5%80%92%E6%8E%92%E7%B4%A2%E5%BC%95/</link>
+      <pubDate>Fri, 26 Mar 2021 00:01:23 +0800</pubDate>
+      
+      <guid>https://pickerxxr.github.io/posts/%E5%85%B3%E4%BA%8Emapreduce%E4%B8%AD%E7%9A%84%E5%80%92%E6%8E%92%E7%B4%A2%E5%BC%95/</guid>
+      <description>MapReduce中的倒排索引(Inversed Index) 最近在学习hadoop相关知识，到MapReduce这一部分发现比较繁杂，倒排索引的概念总是含糊不清，特此整理之。
+Brief View： 简单来说，倒排索引就是搜索引擎通过关键字来进行网页或者文档的定位，从而达到在搜索引擎中搜索能够返回希望的到的页面或者文档（包含这样的关键字） Google就是利用这样的搜索方式进行网页检索的，而各大平台所运用的搜索引擎也大都利用这种思想。
+MapReduce与倒排索引  首先是一个简单的例子：  T0 = &amp;quot;it is what it is&amp;quot; T1 = &amp;quot;what is it&amp;quot; T2 = &amp;quot;it is a banana&amp;quot; 如果我们根据这个来建立倒排索引，会得到的就是例如
+&amp;quot;a&amp;quot;: {2} &amp;quot;is&amp;quot;:{0, 1, 2} ... </description>
+    </item>
+    
     <item>
       <title>GFS详解</title>
       <link>https://pickerxxr.github.io/posts/gfs%E8%AF%A6%E8%A7%A3/</link>
