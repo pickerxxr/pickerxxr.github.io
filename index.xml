@@ -6,7 +6,16 @@
     <description>Recent content on Youzhe Liu&#39;s site</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>en-us</language>
-    <lastBuildDate>Fri, 26 Mar 2021 00:01:23 +0800</lastBuildDate><atom:link href="https://pickerxxr.github.io/index.xml" rel="self" type="application/rss+xml" />
+    <lastBuildDate>Fri, 26 Mar 2021 00:16:43 +0800</lastBuildDate><atom:link href="https://pickerxxr.github.io/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>MapReduce Examples Implementation</title>
+      <link>https://pickerxxr.github.io/posts/mapreduce-examples-implementation/</link>
+      <pubDate>Fri, 26 Mar 2021 00:16:43 +0800</pubDate>
+      
+      <guid>https://pickerxxr.github.io/posts/mapreduce-examples-implementation/</guid>
+      <description>MapReduce一些经典实现案例编写(使用mrjob+Python)  Using mrjob to implement 7 cases  MR原理 使用Hadoop Streaming -python写出WordCount 使用mr计算movielen中每个用户的平均评分。 使用mr实现merge功能。根据item，merge movielen中的 u.data u.item 使用mr实现去重任务。 使用mr实现排序。 使用mapreduce实现倒排索引。 使用mapreduce计算Jaccard相似度。 使用mapreduce实现PageRank。    </description>
+    </item>
+    
     <item>
       <title>关于MapReduce中的倒排索引</title>
       <link>https://pickerxxr.github.io/posts/%E5%85%B3%E4%BA%8Emapreduce%E4%B8%AD%E7%9A%84%E5%80%92%E6%8E%92%E7%B4%A2%E5%BC%95/</link>
