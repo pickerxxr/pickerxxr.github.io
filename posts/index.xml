@@ -22,7 +22,7 @@
       <pubDate>Fri, 26 Mar 2021 00:16:43 +0800</pubDate>
       
       <guid>https://pickerxxr.github.io/posts/mapreduce-examples-implementation/</guid>
-      <description>MapReduce一些经典实现案例编写(使用mrjob+Python)  Using mrjob to implement 7 cases  MR原理 使用Hadoop Streaming -python写出WordCount 使用mr计算movielen中每个用户的平均评分。 使用mr实现merge功能。根据item，merge movielen中的 u.data u.item 使用mr实现去重任务。 使用mr实现排序。 使用mapreduce实现倒排索引。 使用mapreduce计算Jaccard相似度。 使用mapreduce实现PageRank。    </description>
+      <description>MapReduce一些经典实现案例编写(使用mrjob+Python)  Using mrjob to implement 7 cases  MR原理 使用mr计算movielen中每个用户的平均评分。 使用mr实现去重任务。 使用mr实现排序。 使用mapreduce实现倒排索引。 使用mapreduce实现PageRank。    MapReduce?   MapReduce的简单梳理：MapReduce是Hadoop计算框架中最为经典的一个算法应用，在HDFS的基础上进行MapReduce的计算是十分经典的任务。实际上包括了map shuffle reduce三个任务，其中shuffle就是对数据进行映射拷贝，目的是将所有键值相同的数据放到统一的节点上。原理流程图如下：  mrjob?  mrjob 是python的一个package可以实现脱离Hadoop系统的情况下进行MapReduce的编写，并能够平滑对接亚马逊的分布式任务 运行方式有：  python word_count.py -r inline input.txt &amp;gt; output.txt # using inline python word_count.py input.txt &amp;gt; output.txt python word_count.py -r local input.txt &amp;gt; output1.txt # 与inline的区别是会利用多线程 python word_count.py -r hadoop hdfs://localhost:9000/input # 利用Hadoop    实现movielen数据中的用户平均评分   字段示例：  userId,movieId,rating,timestamp 1,1,4.</description>
     </item>
     
     <item>

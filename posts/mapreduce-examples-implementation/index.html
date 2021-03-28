@@ -44,18 +44,203 @@
 <li>7 cases
 <ul>
 <li>MR原理</li>
-<li>使用Hadoop Streaming -python写出WordCount</li>
 <li>使用mr计算movielen中每个用户的平均评分。</li>
-<li>使用mr实现merge功能。根据item，merge movielen中的 u.data u.item</li>
 <li>使用mr实现去重任务。</li>
 <li>使用mr实现排序。</li>
 <li>使用mapreduce实现倒排索引。</li>
-<li>使用mapreduce计算Jaccard相似度。</li>
 <li>使用mapreduce实现PageRank。</li>
 </ul>
 </li>
 </ul>
+<ol start="0">
+<li>MapReduce?</li>
+</ol>
+<ul>
+<li>MapReduce的简单梳理：MapReduce是Hadoop计算框架中最为经典的一个算法应用，在HDFS的基础上进行MapReduce的计算是十分经典的任务。实际上包括了map shuffle reduce三个任务，其中shuffle就是对数据进行映射拷贝，目的是将所有键值相同的数据放到统一的节点上。原理流程图如下：
+<img src="https://alanliusite-1301924840.cos.ap-nanjing.myqcloud.com/imgs/20210328214101.png" alt="MapReduce"></li>
+<li>mrjob?
+<ul>
+<li>mrjob 是python的一个package可以实现脱离Hadoop系统的情况下进行MapReduce的编写，并能够平滑对接亚马逊的分布式任务</li>
+<li>运行方式有：</li>
+</ul>
+<pre><code>python word_count.py -r inline input.txt &gt; output.txt  # using inline
+python word_count.py input.txt &gt; output.txt 
+python word_count.py -r local input.txt &gt; output1.txt # 与inline的区别是会利用多线程
+python word_count.py  -r hadoop hdfs://localhost:9000/input # 利用Hadoop
+</code></pre></li>
+</ul>
+<ol>
+<li>实现movielen数据中的用户平均评分</li>
+</ol>
+<ul>
+<li>字段示例：</li>
+</ul>
+<pre><code>userId,movieId,rating,timestamp
+1,1,4.0,964982703
+1,3,4.0,964981247
+1,6,4.0,964982224
+1,47,5.0,964983815
+1,50,5.0,964982931
+</code></pre><ul>
+<li>代码编写：</li>
+</ul>
+<pre><code class="language-{Python}" data-lang="{Python}">#!/usr/bin/python
+# -*- coding: utf-8 -*-
+from mrjob.job import MRJob
 
+
+class MRratingAvg(MRJob):
+    '''
+    计算每个用户的平均评分
+    '''
+    def mapper(self, _, line):
+        user_id, item_id, rating, timestamp = line.strip().split(',')
+        if not user_id.isdigit():
+            return
+        yield user_id, float(rating)
+
+    def reducer(self, user_id, values):
+        #shuff and sort 之后
+        '''
+        (user_id,[rating1,rating2,rating3])
+        '''
+        l = list(values)
+        yield (user_id, sum(l)/len(l))
+
+
+if __name__ == '__main__':
+    MRratingAvg.run()
+</code></pre><ol start="2">
+<li>使用mrjob实现去重任务</li>
+</ol>
+<pre><code class="language-{Python}" data-lang="{Python}">#~/usr/bin/python
+from mrjob.job import MRJob
+
+class MREliminate(MRJob):
+    def mapper(self, _, lines):
+        line = lines.strip().split(&quot; &quot;)
+        yield line[0], (line[1], line[2])
+
+    def reducer(self, key, values):
+        exist_ls = []
+        for v in values:
+            if v not in exist_ls:
+                exist_ls.append(v)
+                yield key, (v[0], v[1])
+
+if __name__ == &quot;__main__&quot;:
+    MREliminate.run()
+</code></pre><ol start="3">
+<li>使用MapReduce实现排序任务</li>
+</ol>
+<pre><code class="language-{Python}" data-lang="{Python}">from mrjob.job import MRJob
+
+
+class MRrank(MRJob):
+    '''
+    计算每个用户的平均评分
+    '''
+    def mapper(self, _, line):
+        user_id, score = line.split(',')
+        yield 'rank', (float(score), user_id)
+
+    def reducer(self, user_id, values):
+        # shuff and sort 之后
+        l = list(values)
+        l.sort()
+        for key in l:
+            print key[1], key[0]
+
+
+if __name__ == '__main__':
+    MRrank.run()
+</code></pre><ol start="4">
+<li>使用MapReduce实现倒排索引
+Data set shown following:</li>
+</ol>
+<pre><code>d1,i love shanghai
+d2,i am from shanghai now i study in tongji university
+d3,i am from lanzhou now i study in lanzhou university of science  and  technolgy
+</code></pre><pre><code class="language-{Python}" data-lang="{Python}">from mrjob.job import MRJob
+
+
+class MRratingAvg(MRJob):
+    '''
+    计算每个用户的平均评分
+    '''
+    def mapper(self, _, line):
+        line = line.strip().split(',')
+        docum = line[0]
+        words = line[1].split()
+        for word in words:
+            yield word, docum
+
+    def reducer(self, word, docum):
+        #shuff and sort 之后
+        temp = []
+        for d in docum:
+            temp.append(d)
+        yield word, temp
+
+
+if __name__ == '__main__':
+    MRratingAvg.run()
+</code></pre><ul>
+<li>实现的最终结果：</li>
+</ul>
+<pre><code>&quot;am&quot;	[&quot;d2&quot;, &quot;d3&quot;]
+&quot;and&quot;	[&quot;d3&quot;]
+&quot;from&quot;	[&quot;d2&quot;, &quot;d3&quot;]
+&quot;i&quot;	[&quot;d1&quot;, &quot;d2&quot;, &quot;d2&quot;, &quot;d3&quot;, &quot;d3&quot;]
+&quot;in&quot;	[&quot;d2&quot;, &quot;d3&quot;]
+&quot;lanzhou&quot;	[&quot;d3&quot;, &quot;d3&quot;]
+&quot;love&quot;	[&quot;d1&quot;]
+&quot;now&quot;	[&quot;d2&quot;, &quot;d3&quot;]
+&quot;of&quot;	[&quot;d3&quot;]
+&quot;science&quot;	[&quot;d3&quot;]
+&quot;shanghai&quot;	[&quot;d1&quot;, &quot;d2&quot;]
+&quot;study&quot;	[&quot;d2&quot;, &quot;d3&quot;]
+&quot;technolgy&quot;	[&quot;d3&quot;]
+&quot;tongji&quot;	[&quot;d2&quot;]
+&quot;university&quot;	[&quot;d2&quot;, &quot;d3&quot;]
+</code></pre><ol start="5">
+<li>MapReduce 实现PageRank特定算法任务
+Data set:</li>
+</ol>
+<pre><code>A,0.25,B,C,D
+B,0.25,A,D
+C,0.25,C
+D,0.25,B,C
+</code></pre><p>数据集代表着从某节点到其他节点的边的分布</p>
+<pre><code>from mrjob.job import MRJob
+from mrjob.protocol import JSONProtocol
+from mrjob.step import MRStep
+
+
+class MRPageRank(MRJob):
+
+    def mapper(self, _, line):
+        data = line.strip().split(',')
+        p = float(data[1])
+        target = data[2:]
+        n = len(target)
+        for i in target:
+            yield i, p/n
+
+    def reducer(self, id, p):
+        ''' reducer of pagerank algorithm'''
+        alpha = 0.8
+        N = 4  # Size of the web pages
+        value = 0.0
+        for v in p:
+            value += float(v)
+        values = alpha * value + (1 - alpha) / N
+        yield id, values
+
+
+if __name__ == '__main__':
+    MRPageRank.run()
+</code></pre>
 </main>
 
   <footer>
