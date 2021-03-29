@@ -6,7 +6,16 @@
     <description>Recent content on Youzhe Liu&#39;s site</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>en-us</language>
-    <lastBuildDate>Sun, 28 Mar 2021 16:28:28 +0800</lastBuildDate><atom:link href="https://pickerxxr.github.io/index.xml" rel="self" type="application/rss+xml" />
+    <lastBuildDate>Tue, 30 Mar 2021 00:42:41 +0800</lastBuildDate><atom:link href="https://pickerxxr.github.io/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>Graph Partition Record</title>
+      <link>https://pickerxxr.github.io/posts/graph-partition-record/</link>
+      <pubDate>Tue, 30 Mar 2021 00:42:41 +0800</pubDate>
+      
+      <guid>https://pickerxxr.github.io/posts/graph-partition-record/</guid>
+      <description> Graph Partition 工作中的一些思路手稿  </description>
+    </item>
+    
     <item>
       <title>时间序列笔记</title>
       <link>https://pickerxxr.github.io/posts/%E6%97%B6%E9%97%B4%E5%BA%8F%E5%88%97%E7%AC%94%E8%AE%B0/</link>
