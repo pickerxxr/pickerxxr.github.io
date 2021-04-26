@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en-us">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>最常见的基本数据结构算法题目 | Youzhe Liu&#39;s site</title>
+    <link rel="stylesheet" href="/css/style.css" />
+    <link rel="stylesheet" href="/css/fonts.css" />
+    
+  </head>
+
+  <body>
+    <nav>
+    <ul class="menu">
+      
+      <li><a href="/">Home</a></li>
+      
+      <li><a href="/posts/">Posts</a></li>
+      
+      <li><a href="/categories/">Categories</a></li>
+      
+      <li><a href="/tags/">Tags</a></li>
+      
+      <li><a href="/about/">About</a></li>
+      
+      <li><a href="/CV/CV.pdf">CV</a></li>
+      
+      <li><a href="/papers/">papers_rep</a></li>
+      
+    </ul>
+    <hr/>
+    </nav>
+
+<div class="article-meta">
+<h1><span class="title">最常见的基本数据结构算法题目</span></h1>
+
+<h2 class="date">2021/04/26</h2>
+</div>
+
+<main>
+<h1 id="heading"></h1>
+<h2 id="非递归二叉树三种遍历">非递归二叉树三种遍历</h2>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python"><span style="color:#75715e"># Python 定义树结构</span>
+<span style="color:#66d9ef">class</span> <span style="color:#a6e22e">TreeNode</span>(object):
+
+    <span style="color:#75715e">#定义树的结点内容（数据、左右孩子）</span>
+    <span style="color:#66d9ef">def</span> __init__(self, left, right, val):
+        self<span style="color:#f92672">.</span>val <span style="color:#f92672">=</span> val
+        self<span style="color:#f92672">.</span>left <span style="color:#f92672">=</span> left
+        self<span style="color:#f92672">.</span>right <span style="color:#f92672">=</span> right
+</code></pre></div><h3 id="先序遍历">先序遍历</h3>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python"><span style="color:#66d9ef">def</span> <span style="color:#a6e22e">preorder</span>(root):
+    stack <span style="color:#f92672">=</span> []
+    <span style="color:#66d9ef">while</span> stack <span style="color:#f92672">or</span> root:  <span style="color:#75715e"># 当stack非空或者root非空时</span>
+        <span style="color:#66d9ef">while</span> root:
+            <span style="color:#66d9ef">print</span>(root<span style="color:#f92672">.</span>val)
+            stack<span style="color:#f92672">.</span>append(root)
+            root <span style="color:#f92672">=</span> root<span style="color:#f92672">.</span>left
+        root <span style="color:#f92672">=</span> stack<span style="color:#f92672">.</span>pop()
+        root <span style="color:#f92672">=</span> root<span style="color:#f92672">.</span>right
+</code></pre></div><h3 id="中序遍历">中序遍历</h3>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python"><span style="color:#66d9ef">def</span> <span style="color:#a6e22e">inorder</span>(root):
+    stack <span style="color:#f92672">=</span> []
+    <span style="color:#66d9ef">while</span> root <span style="color:#f92672">or</span> stack:
+        <span style="color:#66d9ef">while</span> root:
+            stack<span style="color:#f92672">.</span>append(root)
+            root <span style="color:#f92672">=</span> root<span style="color:#f92672">.</span>left
+      root <span style="color:#f92672">=</span> stack<span style="color:#f92672">.</span>pop()
+      <span style="color:#66d9ef">print</span>(root<span style="color:#f92672">.</span>val)
+      root <span style="color:#f92672">=</span> root<span style="color:#f92672">.</span>right
+</code></pre></div><h3 id="后序遍历">后序遍历</h3>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python"><span style="color:#66d9ef">def</span> <span style="color:#a6e22e">postorder</span>(root):
+  	stack <span style="color:#f92672">=</span> []
+    <span style="color:#66d9ef">while</span> stack <span style="color:#f92672">or</span> root:
+      	<span style="color:#66d9ef">while</span> root:
+        		stack<span style="color:#f92672">.</span>append(stack)
+            root <span style="color:#f92672">=</span> root<span style="color:#f92672">.</span>left <span style="color:#66d9ef">if</span> root<span style="color:#f92672">.</span>left <span style="color:#66d9ef">else</span> root<span style="color:#f92672">.</span>right
+        root <span style="color:#f92672">=</span> stack<span style="color:#f92672">.</span>pop()
+        <span style="color:#66d9ef">print</span>(root<span style="color:#f92672">.</span>val)
+        <span style="color:#66d9ef">if</span> stack <span style="color:#f92672">and</span> stack[<span style="color:#f92672">-</span><span style="color:#ae81ff">1</span>]<span style="color:#f92672">.</span>lchild <span style="color:#f92672">==</span> root:
+        root <span style="color:#f92672">=</span> stack[<span style="color:#f92672">-</span><span style="color:#ae81ff">1</span>]<span style="color:#f92672">.</span>rchild
+        <span style="color:#66d9ef">else</span>:
+						root <span style="color:#f92672">=</span> None
+</code></pre></div><h2 id="top-k问题">TOP-K问题</h2>
+<ul>
+<li>可以冒泡排序来找到前K大，但是其实是没必要的，因为我们无需知道这k个内部的排序顺序。</li>
+</ul>
+<p>基本思路为：</p>
+<ol>
+<li>先用前k个元素生成一个小顶堆，用于储存现有的k大元素。其实这也是最大的复杂度所在了。</li>
+<li>接着就是扫描后面的（从k+1开始算起）的元素，如果比堆顶的元素大就替换并且heapify。</li>
+<li>扫描完就可以输出。</li>
+</ol>
+<h2 id="写法最好的排序算法">写法最好的排序算法</h2>
+<h3 id="极简快排">极简快排</h3>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python"><span style="color:#66d9ef">def</span> <span style="color:#a6e22e">quicksort</span>(arr):    
+    <span style="color:#66d9ef">if</span> len(arr) <span style="color:#f92672">&lt;=</span> <span style="color:#ae81ff">1</span>:        
+        <span style="color:#66d9ef">return</span> arr    
+    pivot <span style="color:#f92672">=</span> arr[len(arr) <span style="color:#f92672">//</span> <span style="color:#ae81ff">2</span>]    
+    left <span style="color:#f92672">=</span> [x <span style="color:#66d9ef">for</span> x <span style="color:#f92672">in</span> arr <span style="color:#66d9ef">if</span> x <span style="color:#f92672">&lt;</span> pivot]    
+    middle <span style="color:#f92672">=</span> [x <span style="color:#66d9ef">for</span> x <span style="color:#f92672">in</span> arr <span style="color:#66d9ef">if</span> x <span style="color:#f92672">==</span> pivot]    
+    right <span style="color:#f92672">=</span> [x <span style="color:#66d9ef">for</span> x <span style="color:#f92672">in</span> arr <span style="color:#66d9ef">if</span> x <span style="color:#f92672">&gt;</span> pivot]    
+    <span style="color:#66d9ef">return</span> quicksort(left) <span style="color:#f92672">+</span> middle <span style="color:#f92672">+</span> quicksort(right)
+<span style="color:#66d9ef">print</span>(quicksort([<span style="color:#ae81ff">3</span>, <span style="color:#ae81ff">6</span>, <span style="color:#ae81ff">8</span>, <span style="color:#ae81ff">19</span>, <span style="color:#ae81ff">1</span>, <span style="color:#ae81ff">5</span>])) 
+</code></pre></div><h3 id="归并">归并</h3>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python"><span style="color:#66d9ef">def</span> <span style="color:#a6e22e">merge_sort</span>(lst):
+    <span style="color:#66d9ef">if</span> len(lst) <span style="color:#f92672">&lt;=</span> <span style="color:#ae81ff">1</span>:
+        <span style="color:#66d9ef">return</span> lst
+    middle <span style="color:#f92672">=</span> int (len(lst)<span style="color:#f92672">/</span><span style="color:#ae81ff">2</span>)
+
+    left <span style="color:#f92672">=</span> merge_sort(lst[ :middle])<span style="color:#75715e">#左边</span>
+    right <span style="color:#f92672">=</span> merge_sort(lst[middle: ])<span style="color:#75715e">#右边</span>
+    merged <span style="color:#f92672">=</span> []
+    <span style="color:#66d9ef">while</span> left <span style="color:#f92672">and</span> right:
+        merged<span style="color:#f92672">.</span>append(left<span style="color:#f92672">.</span>pop(<span style="color:#ae81ff">0</span>) <span style="color:#66d9ef">if</span> left [<span style="color:#ae81ff">0</span>] <span style="color:#f92672">&lt;=</span> right[<span style="color:#ae81ff">0</span>] <span style="color:#66d9ef">else</span> right<span style="color:#f92672">.</span>pop(<span style="color:#ae81ff">0</span>))
+    merged<span style="color:#f92672">.</span>extend(right <span style="color:#66d9ef">if</span> right <span style="color:#66d9ef">else</span> left)  <span style="color:#75715e">#该方法没有返回值，但会在已存在的列表中添加新的列表内容</span>
+    <span style="color:#66d9ef">return</span> merged
+data_lst <span style="color:#f92672">=</span> [<span style="color:#ae81ff">6</span>,<span style="color:#ae81ff">202</span>,<span style="color:#ae81ff">100</span>,<span style="color:#ae81ff">301</span>,<span style="color:#ae81ff">38</span>,<span style="color:#ae81ff">8</span>,<span style="color:#ae81ff">1</span>]
+<span style="color:#66d9ef">print</span>(merge_sort(data_lst))
+</code></pre></div><h3 id="插入">插入</h3>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python">arr <span style="color:#f92672">=</span> [<span style="color:#ae81ff">1</span>,<span style="color:#ae81ff">12</span>,<span style="color:#ae81ff">2</span>, <span style="color:#ae81ff">11</span>, <span style="color:#ae81ff">13</span>, <span style="color:#ae81ff">5</span>, <span style="color:#ae81ff">6</span>,<span style="color:#ae81ff">18</span>,<span style="color:#ae81ff">4</span>,<span style="color:#ae81ff">9</span>,<span style="color:#f92672">-</span><span style="color:#ae81ff">5</span>,<span style="color:#ae81ff">3</span>,<span style="color:#ae81ff">11</span>] 
+
+<span style="color:#66d9ef">def</span> <span style="color:#a6e22e">insertionSort</span>(arr):
+    <span style="color:#75715e">#从要排序的列表第二个元素开始比较</span>
+    <span style="color:#66d9ef">for</span> i <span style="color:#f92672">in</span> range(<span style="color:#ae81ff">1</span>,len(arr)):
+        j <span style="color:#f92672">=</span> i
+        <span style="color:#75715e">#从大到小比较，直到比较到第一个元素</span>
+        <span style="color:#66d9ef">while</span> j <span style="color:#f92672">&gt;</span> <span style="color:#ae81ff">0</span>:
+            <span style="color:#66d9ef">if</span> arr[j] <span style="color:#f92672">&lt;</span> arr[j<span style="color:#f92672">-</span><span style="color:#ae81ff">1</span>]:
+                arr[j<span style="color:#f92672">-</span><span style="color:#ae81ff">1</span>],arr[j] <span style="color:#f92672">=</span> arr[j],arr[j<span style="color:#f92672">-</span><span style="color:#ae81ff">1</span>]
+            j <span style="color:#f92672">-=</span> <span style="color:#ae81ff">1</span>        
+    <span style="color:#66d9ef">return</span> arr
+<span style="color:#66d9ef">print</span>(insertionSort(arr))
+</code></pre></div>
+</main>
+
+  <footer>
+  
+  
+  <hr/>
+  © <a href="https://baidu.com">Alan Liu</a> 2021 &ndash; 2021 | <a href="https://github.com/pickerxxr">Github</a> | <a href="pickerxxr@gmail.com">mail</a>
+  
+  </footer>
+  </body>
+</html>
+

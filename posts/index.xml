@@ -6,7 +6,16 @@
     <description>Recent content in Posts on Youzhe Liu&#39;s site</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>en-us</language>
-    <lastBuildDate>Sat, 17 Apr 2021 23:36:43 +0800</lastBuildDate><atom:link href="https://pickerxxr.github.io/posts/index.xml" rel="self" type="application/rss+xml" />
+    <lastBuildDate>Mon, 26 Apr 2021 20:08:49 +0800</lastBuildDate><atom:link href="https://pickerxxr.github.io/posts/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>最常见的基本数据结构算法题目</title>
+      <link>https://pickerxxr.github.io/posts/%E6%9C%80%E5%B8%B8%E8%A7%81%E7%9A%84%E5%9F%BA%E6%9C%AC%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84%E7%AE%97%E6%B3%95%E9%A2%98%E7%9B%AE/</link>
+      <pubDate>Mon, 26 Apr 2021 20:08:49 +0800</pubDate>
+      
+      <guid>https://pickerxxr.github.io/posts/%E6%9C%80%E5%B8%B8%E8%A7%81%E7%9A%84%E5%9F%BA%E6%9C%AC%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84%E7%AE%97%E6%B3%95%E9%A2%98%E7%9B%AE/</guid>
+      <description>非递归二叉树三种遍历 # Python 定义树结构 class TreeNode(object): #定义树的结点内容（数据、左右孩子） def __init__(self, left, right, val): self.val = val self.left = left self.right = right 先序遍历 def preorder(root): stack = [] while stack or root: # 当stack非空或者root非空时 while root: print(root.val) stack.append(root) root = root.left root = stack.pop() root = root.right 中序遍历 def inorder(root): stack = [] while root or stack: while root: stack.append(root) root = root.left root = stack.pop() print(root.val) root = root.right 后序遍历 def postorder(root): stack = [] while stack or root: while root: stack.</description>
+    </item>
+    
     <item>
       <title>Digital Image Processing Notes</title>
       <link>https://pickerxxr.github.io/posts/digital-image-processing-notes/</link>
