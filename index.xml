@@ -6,7 +6,34 @@
     <description>Recent content on Youzhe Liu&#39;s site</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>en-us</language>
-    <lastBuildDate>Mon, 26 Apr 2021 21:17:34 +0800</lastBuildDate><atom:link href="https://pickerxxr.github.io/index.xml" rel="self" type="application/rss+xml" />
+    <lastBuildDate>Mon, 26 Apr 2021 23:30:53 +0800</lastBuildDate><atom:link href="https://pickerxxr.github.io/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>NoSQL Basic Concepts</title>
+      <link>https://pickerxxr.github.io/posts/nosql-basic-concepts/</link>
+      <pubDate>Mon, 26 Apr 2021 23:30:53 +0800</pubDate>
+      
+      <guid>https://pickerxxr.github.io/posts/nosql-basic-concepts/</guid>
+      <description>NoSQL基本 首先介绍索引 B+Tree 结构
+建索引须知：建在where，group by，排序等列上而不建在性别等少数类别的列上
+建索引不一定加速：索引没有查询所需字段
+NoSQL类别 NoSQL全称为Not Only SQL。主要可分为：K-V类、文档型、列式存储型、全文搜索型四类
+K-V类 全称Key-Value，这应该是我们都熟悉就像Map一样。代表数据库就是redis,redis的value还分了很多结构，例如:list、set、sorted set、hash、string等。
+它是存储在内存中的，所以速度快常用来作为缓存服务器。 而且因为它的结构导致有些操作比关系型数据库简单。
+举个例子例如List的[LPUSHX key value]操作，将一个值插入到已存在的列表头部，列表是有序的，如果在关系型数据库中得怎么办，插入一条数据，并且将控制位置的那个字段例如叫index，设为1。那是不是还得修改本来的那些数据，把后面所有行的index值都加一，这样才能控制有序，之后删除哪条数据，还得维护修改index。操作是比较麻烦的。
+但是它ACID事务只支持I和C也就是隔离性和一致性，不支持原子性和持久性。所以在一些对事务要求的情况下就不适合了。
+ ACID事务？
+ACID，是指数据库管理系统（DBMS）在写入或更新资料的过程中，为保证事务（transaction）是正确可靠的，所必须具备的四个特性：原子性（atomicity，或称不可分割性）、一致性（consistency）、隔离性（isolation，又称独立性）、持久性（durability）。
+ 文档型 简单可以理解为Json类型的文件架构
+列存储型 代表数据库为HBase。
+按行存储的好处是业务可以简单的获取一行也就是多个列的数据，因为按行存储数据都是连续的，所以磁盘一次操作就读取所有列的数据。
+但是按列的话，因为列的存储是不连续的，所以磁盘读取效率比行低
+按行存储写如果操作也是一行一起的，保证的所有列的数据要么都成功写入，要么的失败 。 如果是按列的话就有可能有些列成功，有些列失败。
+但是在大数据统计的时候，一般就统计某一列或者某几列的数据。如果这时候是按行存储的话，那么每次从磁盘读取到内存时都会读取整行数据导致IO过大和资源的浪费。
+所以节省I/O就采用按列存储，这样每次只需要拿想要的列进行统计。
+按列存储，直观上可以看到一个很重要的优点就是针对于列的操作变得迅速而简单，比如我们要提取某一列的特征，算个平均数之类，列数据库的优点就很明显了。
+全文检索型 代表：Elasticsearch</description>
+    </item>
+    
     <item>
       <title>Golang 多线程</title>
       <link>https://pickerxxr.github.io/posts/golang-%E5%A4%9A%E7%BA%BF%E7%A8%8B/</link>

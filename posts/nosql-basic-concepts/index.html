@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en-us">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>NoSQL Basic Concepts | Youzhe Liu&#39;s site</title>
+    <link rel="stylesheet" href="/css/style.css" />
+    <link rel="stylesheet" href="/css/fonts.css" />
+    
+  </head>
+
+  <body>
+    <nav>
+    <ul class="menu">
+      
+      <li><a href="/">Home</a></li>
+      
+      <li><a href="/posts/">Posts</a></li>
+      
+      <li><a href="/categories/">Categories</a></li>
+      
+      <li><a href="/tags/">Tags</a></li>
+      
+      <li><a href="/about/">About</a></li>
+      
+      <li><a href="/CV/CV.pdf">CV</a></li>
+      
+      <li><a href="/papers/">papers_rep</a></li>
+      
+    </ul>
+    <hr/>
+    </nav>
+
+<div class="article-meta">
+<h1><span class="title">NoSQL Basic Concepts</span></h1>
+
+<h2 class="date">2021/04/26</h2>
+</div>
+
+<main>
+<h1 id="nosql基本">NoSQL基本</h1>
+<h2 id="首先介绍索引">首先介绍索引</h2>
+<p>B+Tree 结构</p>
+<p>建索引须知：建在where，group by，排序等列上而不建在性别等少数类别的列上</p>
+<p>建索引不一定加速：索引没有查询所需字段</p>
+<h2 id="nosql类别">NoSQL类别</h2>
+<p>NoSQL全称为Not Only SQL。主要可分为：K-V类、文档型、列式存储型、全文搜索型四类</p>
+<h3 id="k-v类">K-V类</h3>
+<p>全称Key-Value，这应该是我们都熟悉就像Map一样。代表数据库就是redis,redis的value还分了很多结构，例如:list、set、sorted set、hash、string等。</p>
+<p><strong>它是存储在内存中的，所以速度快常用来作为缓存服务器</strong>。 而且因为<strong>它的结构导致有些操作比关系型数据库简单</strong>。</p>
+<p>举个例子例如List的[LPUSHX key value]操作，将一个值插入到已存在的列表头部，列表是有序的，如果在关系型数据库中得怎么办，插入一条数据，并且将控制位置的那个字段例如叫index，设为1。那是不是还得修改本来的那些数据，把后面所有行的index值都加一，这样才能控制有序，之后删除哪条数据，还得维护修改index。操作是比较麻烦的。</p>
+<p>但是它ACID事务只支持I和C也就是隔离性和一致性，<strong>不支持原子性和持久性</strong>。所以在一些对事务要求的情况下就不适合了。</p>
+<blockquote>
+<p>ACID事务？</p>
+<p>ACID，是指数据库管理系统（DBMS）在写入或更新资料的过程中，为保证事务（transaction）是正确可靠的，所必须具备的四个特性：原子性（atomicity，或称不可分割性）、一致性（consistency）、隔离性（isolation，又称独立性）、持久性（durability）。</p>
+</blockquote>
+<h3 id="文档型">文档型</h3>
+<p>简单可以理解为Json类型的文件架构</p>
+<h3 id="列存储型">列存储型</h3>
+<p>代表数据库为HBase。</p>
+<p>按行存储的好处是业务可以简单的获取一行也就是多个列的数据，因为按行存储数据都是连续的，所以磁盘一次操作就读取所有列的数据。</p>
+<p>但是<strong>按列的话，因为列的存储是不连续的，所以磁盘读取效率比行低</strong></p>
+<p>按行存储写如果操作也是一行一起的，保证的所有列的数据要么都成功写入，要么的失败 。 如果是<strong>按列的话就有可能有些列成功，有些列失败</strong>。</p>
+<p>但是在大数据统计的时候，一般就统计某一列或者某几列的数据。如果这时候是按行存储的话，那么每次从磁盘读取到内存时都会读取整行数据导致IO过大和资源的浪费。</p>
+<p>所以<strong>节省I/O就采用按列存储</strong>，这样每次只需要拿想要的列进行统计。</p>
+<p>按列存储，直观上可以看到一个很重要的优点就是针对于列的操作变得迅速而简单，比如我们要提取某一列的特征，算个平均数之类，列数据库的优点就很明显了。</p>
+<h3 id="全文检索型">全文检索型</h3>
+<p>代表：Elasticsearch</p>
+
+</main>
+
+  <footer>
+  
+  
+  <hr/>
+  © <a href="https://baidu.com">Alan Liu</a> 2021 &ndash; 2021 | <a href="https://github.com/pickerxxr">Github</a> | <a href="pickerxxr@gmail.com">mail</a>
+  
+  </footer>
+  </body>
+</html>
+
