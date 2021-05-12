@@ -6,7 +6,26 @@
     <description>Recent content in Posts on Youzhe Liu&#39;s site</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>en-us</language>
-    <lastBuildDate>Mon, 26 Apr 2021 23:30:53 +0800</lastBuildDate><atom:link href="https://pickerxxr.github.io/posts/index.xml" rel="self" type="application/rss+xml" />
+    <lastBuildDate>Wed, 12 May 2021 16:03:33 +0800</lastBuildDate><atom:link href="https://pickerxxr.github.io/posts/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>Spark中一些算子的原理剖析</title>
+      <link>https://pickerxxr.github.io/posts/spark%E4%B8%AD%E4%B8%80%E4%BA%9B%E7%AE%97%E5%AD%90%E7%9A%84%E5%8E%9F%E7%90%86%E5%89%96%E6%9E%90/</link>
+      <pubDate>Wed, 12 May 2021 16:03:33 +0800</pubDate>
+      
+      <guid>https://pickerxxr.github.io/posts/spark%E4%B8%AD%E4%B8%80%E4%BA%9B%E7%AE%97%E5%AD%90%E7%9A%84%E5%8E%9F%E7%90%86%E5%89%96%E6%9E%90/</guid>
+      <description>Spark中一些算子的原理剖析 DataFrame based ReduceByKey &amp;amp;&amp;amp; ReduceBy  首先，说到Spark中大部分算子，尤其是类似于MapReduce的操作，难以避免提到shuffle的原理，这是加速运算的关键。其中，Hadoop基本概念中的MapReduce图示如下：
+  Spark中的Shuffle主要分为两个过程，首先我们从整体图例上来理解Spark对于reduce类任务过程。
+ Hashshuffle主要分为两个阶段   Shuffle Write
+目的为 在上一个stage结束末尾，我们得到的数据结构要进行其他reduce或者group操作，要将数据结构调整为能进行shuffle的算子，以便于后续计算实现的方式就是简单的在这些kv pair上进行hash化的分区。分为多少个磁盘文件 是由下一stage的任务量决定的。
+  Shuffle Read阶段
+这是每一个stage的开始阶段要做的事。这个阶段，stage中的所有task 进行自己对应的磁盘文件的拉去即可（write阶段所进行的任务），shuffle read的拉取过程是一边拉取一边进行聚合的。每个shuffle read task都会有一个自己的buffer缓冲，每次都只能拉取与buffer缓冲相同大小的数据，然后通过内存中的一个Map进行聚合等操作。聚合完一批数据后，再拉取下一批数据，并放到buffer缓冲中进行聚合操作。以此类推，直到最后将所有数据到拉取完，并得到最终的结果。
+   需要注意的：  buffer 的作用是 缓冲可以加速计算，有几个hash的分类就有几个buffer（见图） 磁盘小文件的数量是 $M * R$，$M$代表map 出的task的数量，$R$代表reduce的数量   普通hash分配的缺点  在shuffle过程之前，可能会产生极大量级的磁盘小文件，导致 内存中存在操作具柄、临时信息，产生OOM等问题。    sort Shuffle 上面的图说明了普通的SortShuffleManager的原理。在该模式下，数据会先写入一个内存数据结构中(默认5M)，此时根据不同的shuffle算子，可能选用不同的数据结构。如果是reduceByKey这种聚合类的shuffle算子，那么会选用Map数据结构，一边通过Map进行聚合，一边写入内存;如果是join这种普通的shuffle算子，那么会选用Array数据结构，直接写入内存。接着，每写一条数据进入内存数据结构之后，就会判断一下，是否达到了某个临界阈值。如果达到临界阈值的话，那么就会尝试将内存数据结构中的数据溢写到磁盘，然后清空内存数据结构。
+shuffle中的定时器：定时器会检查内存数据结构的大小，如果内存数据结构空间不够，那么会申请额外的内存，申请的大小满足如下公式：
+$$ applyMemory=nowMenory*2-oldMemory$$
+申请的内存=当前的内存情况*2-上一次的内嵌情况
+意思就是说内存数据结构的大小的动态变化，如果存储的数据超出内存数据结构的大小，将申请内存数据结构存储的数据*2-内存数据结构的设定值的内存大小空间。申请到了，内存数据结构的大小变大，内存不够，申请不到，则发生溢写</description>
+    </item>
+    
     <item>
       <title>NoSQL Basic Concepts</title>
       <link>https://pickerxxr.github.io/posts/nosql-basic-concepts/</link>
