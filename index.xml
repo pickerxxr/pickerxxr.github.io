@@ -6,7 +6,16 @@
     <description>Recent content on Youzhe Liu&#39;s site</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>en-us</language>
-    <lastBuildDate>Wed, 12 May 2021 16:03:33 +0800</lastBuildDate><atom:link href="https://pickerxxr.github.io/index.xml" rel="self" type="application/rss+xml" />
+    <lastBuildDate>Fri, 04 Jun 2021 19:35:23 +0800</lastBuildDate><atom:link href="https://pickerxxr.github.io/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>Warning</title>
+      <link>https://pickerxxr.github.io/posts/warning/</link>
+      <pubDate>Fri, 04 Jun 2021 19:35:23 +0800</pubDate>
+      
+      <guid>https://pickerxxr.github.io/posts/warning/</guid>
+      <description> 要想成为一个好的算法工程师：首先要做好一个优秀的工程师。 切勿好高骛远，眼高手低，忽视基础。 单立一贴，时时当勉励自省。  </description>
+    </item>
+    
     <item>
       <title>Spark中一些算子的原理剖析</title>
       <link>https://pickerxxr.github.io/posts/spark%E4%B8%AD%E4%B8%80%E4%BA%9B%E7%AE%97%E5%AD%90%E7%9A%84%E5%8E%9F%E7%90%86%E5%89%96%E6%9E%90/</link>
